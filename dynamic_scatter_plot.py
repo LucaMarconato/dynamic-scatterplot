@@ -1,5 +1,6 @@
 import sys
 import time
+from functools import lru_cache
 
 import matplotlib.cm
 import numpy as np
@@ -7,6 +8,12 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 
 points_count = 10 ** 4
+
+
+@lru_cache(maxsize=points_count)
+def mkBrush(rgba):
+    return pg.mkBrush(rgba)
+
 
 class DynamicScatterPlot(QtGui.QWidget):
     def __init__(self):
@@ -40,11 +47,9 @@ class DynamicScatterPlot(QtGui.QWidget):
         b = max(intensities)
         colormap = matplotlib.cm.viridis
         positions = np.linspace(a, b, len(colormap.colors), endpoint=True)
-        q_colormap = pg.ColorMap(pos=positions, color=colormap.colors)
+        q_colormap = pg.ColorMap(pos=positions, color=255 * np.array(colormap.colors))
         color_for_points = q_colormap.map(intensities)
-        brushes = [QtGui.QBrush(QtGui.QColor(*color_for_points[i, :].tolist())) for i in
-                   range(color_for_points.shape[0])]
-        return brushes
+        return [mkBrush(tuple(rgba)) for rgba in color_for_points]
 
     def scatter_plot(self, channel):
         start = time.time()
